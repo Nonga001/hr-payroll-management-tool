@@ -6,62 +6,86 @@ const bodyParser = require('body-parser');
 const path = require('path');
 require('dotenv').config();
 
-// Import routes
-const employeeRoutes = require('./routes/employeeRoutes');
-const leaveRoutes = require('./routes/leaveRoutes');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(helmet());
+// ============================================
+// MIDDLEWARE (with relaxed CSP for development)
+// ============================================
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
 app.use(cors());
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Routes
+// ============================================
+// ROUTES
+// ============================================
+
+const employeeRoutes = require('./routes/employeeRoutes');
 app.use('/api/employees', employeeRoutes);
+
+const leaveRoutes = require('./routes/leaveRoutes');
 app.use('/api/leave', leaveRoutes);
 
-// Health check
+const payrollRoutes = require('./routes/payrollRoutes');
+app.use('/api/payroll', payrollRoutes);
+
+const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/api/dashboard', dashboardRoutes);
+
+// ============================================
+// HEALTH CHECK
+// ============================================
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
     message: 'HR & Payroll Management Tool API',
-    version: '0.2.0',
+    version: '1.0.0',
     timestamp: new Date().toISOString(),
-    features: ['Employees', 'Leave Management']
+    features: ['Employees', 'Leave Management', 'Payroll', 'Dashboard']
   });
 });
 
-// Serve frontend
+// ============================================
+// FRONTEND
+// ============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Error handling
+// ============================================
+// ERROR HANDLING
+// ============================================
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', err.stack);
+  console.error('Error:', err.stack);
   res.status(500).json({
     success: false,
     error: err.message || 'Internal Server Error'
   });
 });
 
-// Start server
+// ============================================
+// START SERVER
+// ============================================
 app.listen(PORT, () => {
   console.log(`
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ============================================
   HR & Payroll Management Tool
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ============================================
   Server:    http://localhost:${PORT}
   Health:    http://localhost:${PORT}/api/health
   Employees: http://localhost:${PORT}/api/employees
   Leave:     http://localhost:${PORT}/api/leave
-  Dashboard: http://localhost:${PORT}
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Payroll:   http://localhost:${PORT}/api/payroll/test
+  Dashboard: http://localhost:${PORT}/api/dashboard/test
+  ============================================
   `);
 });
 

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR & Payroll Management Tool</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>HR</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="container">
+        <h1>HR & Payroll Management Tool</h1>
+        <nav>
+          <button class="nav-btn active" data-page="dashboard">Dashboard</button>
+          <button class="nav-btn" data-page="employees">Employees</button>
+          <button class="nav-btn" data-page="leave">Leave</button>
+          <button class="nav-btn" data-page="payroll">Payroll</button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="container" id="content">
+        <div class="text-center" style="padding: 3rem;">
+          <h2>Loading Dashboard...</h2>
+          <p class="text-muted">Please wait while the dashboard loads.</p>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="container">
+        <p>HR & Payroll Management Tool v1.0.0</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

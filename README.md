@@ -4,7 +4,7 @@ A lightweight internal HR and payroll management system with real business logic
 
 ## Project Status
 
-**Day 2 Complete** - Employee & Leave Management implemented
+**Complete** - Employee Management, Leave Management, Payroll, and Dashboard all implemented, including frontend UI.
 
 ## Features
 
@@ -25,22 +25,35 @@ A lightweight internal HR and payroll management system with real business logic
 - Approve/reject workflow
 - Automatic balance deduction on approval
 
-### Payroll (Planned)
-- Monthly payslip generation
+### Payroll
 - Progressive tax calculation (10%, 20%, 30% brackets)
 - Social security deduction (5%)
-- Pro-rata for mid-month joiners
+- Payslip generation for individual employees
+- Batch payroll generation for all employees
+- Pro-rata calculation for mid-month joiners
 - Unpaid leave deductions
+- Payroll history tracking
 
-### Dashboard (Planned)
-- Pending approvals view
-- Who's out and when
-- Leave balance summaries
-- Payslip generation
+### Dashboard
+- Stats cards (total employees, pending leave, approved leave)
+- Who's on leave today
+- Upcoming leave (next 7 days)
+- Pending requests with escalation alerts
+- Leave balances for all employees
+- Recent activity feed
+- Payroll generation trigger from UI
+
+### Frontend
+- Single-page application with tab navigation (Dashboard, Employees, Leave, Payroll)
+- Dynamic content loading per view
+- Employee list with active/inactive status badges
+- Leave request list with status badges (pending, approved, rejected)
+- Payroll summary (total gross, tax, net) with detailed payslip table and period selector
+- Responsive, card-based design with a badge and alert system
 
 ## What I Prioritized
 
-**Leave Management** was my focus because spreadsheets and WhatsApp fail at enforcing business rules. The rules above prevent common problems: last-minute requests, team under-coverage, and self-approval.
+**Leave Management** was my initial focus because spreadsheets and WhatsApp fail at enforcing business rules. The rules above prevent common problems: last-minute requests, team under-coverage, and self-approval. Payroll and the dashboard were built on top of that foundation once the core leave logic was solid.
 
 ## Tech Stack
 
@@ -98,31 +111,60 @@ Server runs at `http://localhost:3000`
 * `PUT /api/leave/:id/approve` - Approve
 * `PUT /api/leave/:id/reject` - Reject
 
+### Payroll
+* `GET /api/payroll/employee/:id` - Get employee's payroll history
+* `GET /api/payroll/:id` - Get payslip by ID
+* `GET /api/payroll/period/:month/:year` - Get payroll for period
+* `GET /api/payroll/period/:month/:year/summary` - Get payroll summary
+* `POST /api/payroll/generate` - Generate payroll for all employees
+* `POST /api/payroll/generate/employee/:id` - Generate payslip for single employee
+
+### Dashboard
+* `GET /api/dashboard` - Get all dashboard data
+* `GET /api/dashboard/stats` - Get stats only
+* `GET /api/dashboard/onleave` - Get who's on leave today
+* `GET /api/dashboard/upcoming` - Get upcoming leave
+* `GET /api/dashboard/pending` - Get pending requests with escalation
+* `GET /api/dashboard/balances` - Get all leave balances
+* `GET /api/dashboard/activity` - Get recent activity
+
 ## Database Schema
 
 See `sql/schema.sql` for complete schema with:
 * Employees
 * Leave requests
 * Leave balances
-* Payroll (coming soon)
+* Payroll
 * Notifications
 
 ## Project Structure
+
+```
 hr-payroll-management-tool/
-├── sql/
-│ └── schema.sql # Database schema
 ├── src/
-│ ├── config/ # Database connection
-│ ├── models/ # Employee & Leave models
-│ ├── routes/ # API routes
-│ ├── services/ # Leave rules engine
-│ └── index.js # Express server
-├── public/ # Frontend files
+│   ├── config/
+│   │   └── database.js          # Database connection
+│   ├── models/
+│   │   ├── Employee.js          # Employee model
+│   │   ├── LeaveRequest.js      # Leave request model
+│   │   └── Payroll.js           # Payroll model
+│   ├── routes/
+│   │   ├── employeeRoutes.js    # Employee API
+│   │   ├── leaveRoutes.js       # Leave API
+│   │   ├── payrollRoutes.js     # Payroll API
+│   │   └── dashboardRoutes.js   # Dashboard API
+│   ├── services/
+│   │   ├── leaveRules.js        # Leave business rules
+│   │   └── dashboardService.js  # Dashboard service
+│   └── index.js                 # Main app
+├── public/
+│   ├── index.html               # Frontend HTML
+│   ├── css/
+│   │   └── styles.css           # CSS styling
+│   └── js/
+│       └── app.js               # Frontend JavaScript
+├── sql/
+│   └── schema.sql               # Database schema
 ├── package.json
 └── README.md
-
-## Next Up
-
-* Payroll Module
-* Dashboard UI
-* Frontend integration
+```

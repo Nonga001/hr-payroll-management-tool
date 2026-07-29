@@ -1,39 +1,40 @@
 const { query, get, run } = require('../config/database');
+const PayrollCalculator = require('../services/payrollCalculator');
 
 class Payroll {
-  // Simple tax calculation
-  static calculateTax(income) {
-    let tax = 0;
-    
-    if (income <= 50000) {
-      tax = income * 0.10;
-    } else if (income <= 100000) {
-      tax = 50000 * 0.10 + (income - 50000) * 0.20;
-    } else {
-      tax = 50000 * 0.10 + 50000 * 0.20 + (income - 100000) * 0.30;
-    }
-    
-    return Math.round(tax * 100) / 100;
-  }
-
-  static calculateSocialSecurity(grossPay) {
-    return Math.round((grossPay * 0.05) * 100) / 100;
-  }
-
   // Generate payslip for one employee
   static async generatePayslip(employeeId, month, year) {
-    const employee = await get('SELECT * FROM employees WHERE id = ?', [employeeId]);
+    // Get employee
+    const employee = await get(`
+      SELECT * FROM employees WHERE id = ? AND is_active = 1
+    `, [employeeId]);
     
     if (!employee) {
-      throw new Error('Employee not found');
+      throw new Error('Employee not found or inactive');
     }
 
-    // Simple gross pay (no deductions for now)
-    const grossPay = employee.salary;
-    const tax = this.calculateTax(grossPay);
-    const socialSecurity = this.calculateSocialSecurity(grossPay);
-    const netPay = Math.round((grossPay - tax - socialSecurity) * 100) / 100;
+    // Get unpaid leave days
+    const unpaidLeave = await query(`
+      SELECT SUM(julianday(end_date) - julianday(start_date) + 1) as days
+      FROM leave_requests
+      WHERE employee_id = ?
+        AND status = 'approved'
+        AND leave_type = 'unpaid'
+        AND strftime('%m', start_date) = ?
+        AND strftime('%Y', start_date) = ?
+    `, [employeeId, String(month).padStart(2, '0'), year]);
 
+    const unpaidDays = Math.floor(unpaidLeave[0]?.days || 0);
+
+    // Use calculator to generate payslip
+    const payslip = PayrollCalculator.generatePayslip(
+      employee,
+      parseInt(month),
+      parseInt(year),
+      unpaidDays
+    );
+
+    // Save to database
     const periodStart = `${year}-${String(month).padStart(2, '0')}-01`;
     const periodEnd = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
 
@@ -42,23 +43,28 @@ class Payroll {
         employee_id, period_start, period_end, gross_pay, 
         tax, social_security, net_pay, unpaid_leave_days
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [employeeId, periodStart, periodEnd, grossPay, tax, socialSecurity, netPay, 0]);
+    `, [
+      employeeId, 
+      periodStart, 
+      periodEnd, 
+      payslip.gross_pay, 
+      payslip.tax, 
+      payslip.social_security, 
+      payslip.net_pay, 
+      payslip.unpaid_leave_days
+    ]);
 
     return {
       id: result.id,
-      employee_id: employeeId,
-      employee_name: employee.name,
-      period: `${month}/${year}`,
-      gross_pay: grossPay,
-      tax: tax,
-      social_security: socialSecurity,
-      net_pay: netPay
+      ...payslip
     };
   }
 
-  // Generate for all employees
+  // Generate payroll for all employees
   static async generatePayrollForAll(month, year) {
-    const employees = await query('SELECT id FROM employees WHERE is_active = 1');
+    const employees = await query(`
+      SELECT id FROM employees WHERE is_active = 1
+    `);
     
     const results = [];
     for (const emp of employees) {
@@ -76,11 +82,37 @@ class Payroll {
     return results;
   }
 
-  // Check if payroll exists
-  static async existsForPeriod(month, year) {
+  // Get payslip by ID
+  static async getPayslip(id) {
+    return await get(`
+      SELECT p.*, e.name as employee_name, e.email, e.role
+      FROM payroll p
+      JOIN employees e ON p.employee_id = e.id
+      WHERE p.id = ?
+    `, [id]);
+  }
+
+  // Get payroll history for employee
+  static async getEmployeeHistory(employeeId) {
+    return await query(`
+      SELECT * FROM payroll
+      WHERE employee_id = ?
+      ORDER BY period_start DESC
+    `, [employeeId]);
+  }
+
+  // Get payroll for a specific period
+  static async getByPeriod(month, year) {
     const periodStart = `${year}-${String(month).padStart(2, '0')}-01`;
-    const result = await get('SELECT COUNT(*) as count FROM payroll WHERE period_start = ?', [periodStart]);
-    return result ? result.count > 0 : false;
+    const periodEnd = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
+    
+    return await query(`
+      SELECT p.*, e.name as employee_name, e.email, e.role
+      FROM payroll p
+      JOIN employees e ON p.employee_id = e.id
+      WHERE p.period_start = ? AND p.period_end = ?
+      ORDER BY e.name
+    `, [periodStart, periodEnd]);
   }
 
   // Get payroll summary
@@ -106,24 +138,15 @@ class Payroll {
     };
   }
 
-  // Get payroll by period
-  static async getByPeriod(month, year) {
+  // Check if payroll exists for period
+  static async existsForPeriod(month, year) {
     const periodStart = `${year}-${String(month).padStart(2, '0')}-01`;
-    return await query(`
-      SELECT p.*, e.name as employee_name
-      FROM payroll p
-      JOIN employees e ON p.employee_id = e.id
-      WHERE p.period_start = ?
+    const result = await get(`
+      SELECT COUNT(*) as count FROM payroll
+      WHERE period_start = ?
     `, [periodStart]);
-  }
-
-  // Get employee history
-  static async getEmployeeHistory(employeeId) {
-    return await query(`
-      SELECT * FROM payroll
-      WHERE employee_id = ?
-      ORDER BY period_start DESC
-    `, [employeeId]);
+    
+    return result ? result.count > 0 : false;
   }
 }
 

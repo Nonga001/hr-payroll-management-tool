@@ -4,32 +4,26 @@ A lightweight internal HR and payroll management system with real business logic
 
 ## Project Status
 
-**Complete** - Employee Management, Leave Management, Payroll, and Dashboard all implemented, including frontend UI.
+**Complete** - Employee Management, Leave Management, Payroll, Dashboard, and automated tests all implemented, including frontend UI.
 
 ## Features
 
 ### Employee Management
-- Create, view, update, and deactivate employees (soft delete)
-- Organizational hierarchy with manager relationships
-- Leave balance tracking per employee
+- Create, view, update, deactivate employees (soft delete)
+- Manager relationships and team views
+- Leave balance tracking
 - Employee fields: name, email, role, team, manager, start date, salary, employment type (full-time/part-time/contract)
 
 ### Leave Management (Core Focus)
-- Request leave with validation rules:
-  - **7-day advance notice** - Prevents last-minute requests
-  - **No self-approval** - Managers can't approve their own leave
-  - **Team coverage** - Only 1 employee per team on leave at a time
-  - **Balance enforcement** - Cannot exceed available balance
-  - **No overlap** - Cannot have overlapping requests
-  - **Escalation** - Requests pending > 3 days flagged for manager attention
+- 5 business rules: 7-day advance notice, no self-approval, team coverage, balance enforcement, no overlap
 - Approve/reject workflow
 - Automatic balance deduction on approval
+- Escalation for requests pending > 3 days
 
 ### Payroll
+- Monthly payslip generation
 - Progressive tax calculation (10%, 20%, 30% brackets)
 - Social security deduction (5%)
-- Payslip generation for individual employees
-- Batch payroll generation for all employees
 - Pro-rata calculation for mid-month joiners
 - Unpaid leave deductions
 - Payroll history tracking
@@ -50,6 +44,12 @@ A lightweight internal HR and payroll management system with real business logic
 - Leave request list with status badges (pending, approved, rejected)
 - Payroll summary (total gross, tax, net) with detailed payslip table and period selector
 - Responsive, card-based design with a badge and alert system
+
+### Testing
+- 26 unit tests covering:
+  - Leave rules (advance notice, self-approval, team coverage, balance, overlap)
+  - Payroll calculations (tax, social security, net pay, pro-rata)
+  - Edge cases and boundary conditions
 
 ## What I Prioritized
 
@@ -89,6 +89,24 @@ npm run dev
 ```
 
 Server runs at `http://localhost:3000`
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm test -- --coverage
+
+# Run tests in watch mode
+npm test -- --watch
+```
+
+**Test Coverage**
+* Leave Rules Engine: tests all 5 business rules
+* Payroll Calculator: tests tax brackets, social security, pro-rata calculations
+* 26 passing tests covering core business logic
 
 ## API Endpoints
 
@@ -145,18 +163,22 @@ hr-payroll-management-tool/
 │   ├── config/
 │   │   └── database.js          # Database connection
 │   ├── models/
-│   │   ├── Employee.js          # Employee model
-│   │   ├── LeaveRequest.js      # Leave request model
-│   │   └── Payroll.js           # Payroll model
+│   │   ├── Employee.js          # Employee CRUD operations
+│   │   ├── LeaveRequest.js      # Leave management
+│   │   └── Payroll.js           # Payroll generation
 │   ├── routes/
-│   │   ├── employeeRoutes.js    # Employee API
-│   │   ├── leaveRoutes.js       # Leave API
-│   │   ├── payrollRoutes.js     # Payroll API
-│   │   └── dashboardRoutes.js   # Dashboard API
+│   │   ├── employeeRoutes.js    # Employee API endpoints
+│   │   ├── leaveRoutes.js       # Leave API endpoints
+│   │   ├── payrollRoutes.js     # Payroll API endpoints
+│   │   └── dashboardRoutes.js   # Dashboard API endpoints
 │   ├── services/
-│   │   ├── leaveRules.js        # Leave business rules
-│   │   └── dashboardService.js  # Dashboard service
-│   └── index.js                 # Main app
+│   │   ├── leaveRules.js        # 5 business rules engine
+│   │   ├── payrollCalculator.js # Tax and payroll calculations
+│   │   └── dashboardService.js  # Dashboard data aggregation
+│   ├── utils/
+│   │   ├── dateHelpers.js       # Date utility functions
+│   │   └── validators.js        # Input validation
+│   └── index.js                 # Application entry point
 ├── public/
 │   ├── index.html               # Frontend HTML
 │   ├── css/
@@ -165,6 +187,9 @@ hr-payroll-management-tool/
 │       └── app.js               # Frontend JavaScript
 ├── sql/
 │   └── schema.sql               # Database schema
+├── tests/
+│   ├── leaveRules.test.js       # Leave rules unit tests
+│   └── payrollCalculator.test.js # Payroll unit tests
 ├── package.json
 └── README.md
 ```

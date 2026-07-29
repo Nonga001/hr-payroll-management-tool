@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: hr-payroll-tool
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: ./hr_payroll.db

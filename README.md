@@ -193,3 +193,7 @@ hr-payroll-management-tool/
 ├── package.json
 └── README.md
 ```
+
+## Hosted Version
+
+Live demo: [https://hr-payroll-tool.onrender.com](https://hr-payroll-tool.onrender.com)

@@ -1,15 +1,39 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
-// Database path
-const DB_PATH = path.join(__dirname, '../../hr_payroll.db');
+// Use the DATABASE_PATH environment variable or default
+const DB_PATH = process.env.DATABASE_PATH || path.join(__dirname, '../../hr_payroll.db');
+
+// Ensure the directory exists
+const dbDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+// Check if database exists, if not, create it from dump
+if (!fs.existsSync(DB_PATH)) {
+  console.log('🔧 Database not found, creating from schema...');
+  const sqlite3 = require('sqlite3').verbose();
+  const db = new sqlite3.Database(DB_PATH);
+  const fs = require('fs');
+  const schema = fs.readFileSync(path.join(__dirname, '../../sql/hr_payroll_dump.sql'), 'utf8');
+  db.exec(schema, (err) => {
+    if (err) {
+      console.error('❌ Error creating database:', err);
+    } else {
+      console.log('✅ Database created successfully');
+    }
+    db.close();
+  });
+}
 
 // Create connection
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
-    console.error(' Database connection error:', err.message);
+    console.error('❌ Database connection error:', err.message);
   } else {
-    console.log(' Connected to SQLite database');
+    console.log('✅ Connected to SQLite database');
   }
 });
 
